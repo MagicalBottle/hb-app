@@ -6,7 +6,7 @@ import store from './store/index'
 import './config/rem'
 
 
-Vue.config.productionTip = false
+Vue.config.productionTip = false;
 
 Vue.use(VueRouter);
 
@@ -14,4 +14,6 @@ new Vue({
   router,
   //render: h => h(home)
   store
-}).$mount('#app')
+}).$mount('#app');
+
+

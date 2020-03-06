@@ -12,7 +12,7 @@
             <van-grid-item icon="delete" to="/delete" text="删除客户" />
             <van-grid-item icon="apps-o" text="更多" />
         </van-grid>
-        <foot></foot>
+        <foot :activeIndex="active"></foot>
     </div>
 </template>
 
@@ -21,9 +21,10 @@ import foot from '../../components/footer/foot'
 import Vue from 'vue';
 import { Grid, GridItem } from 'vant';
 import { Swipe, SwipeItem } from 'vant';
-import { Lazyload } from 'vant';import { NoticeBar } from 'vant';
+import { Lazyload } from 'vant';
+import { NoticeBar } from 'vant';
 
-import {cityGuess} from '../../service/getData'
+// import {cityGuess} from '../../service/getData'
 
 Vue.use(NoticeBar);
 Vue.use(Grid).use(GridItem);
@@ -32,6 +33,7 @@ Vue.use(Lazyload);
 export default {
     data(){
         return{
+            active:0,
              images: [
                 'https://img.yzcdn.cn/vant/apple-1.jpg',
                 'https://img.yzcdn.cn/vant/apple-2.jpg',
@@ -43,10 +45,10 @@ export default {
 
 	mounted(){
         // 获取当前城市
-        cityGuess().then(res => {
-            this.guessCity = res.name;
-            this.guessCityid = res.id;
-        })
+        // cityGuess().then(res => {
+        //     this.guessCity = res.name;
+        //     this.guessCityid = res.id;
+        // })
 
        
     },

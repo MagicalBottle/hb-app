@@ -1,20 +1,33 @@
 import Vue from 'vue'
-import {getStore,removeStore} from '../config/mUtils'
+import {getStore} from '../config/mUtils'
 import axios from 'axios'
 import VueAxios from 'vue-axios'
 import router from '../router/router'
+import hmacSHA256 from 'crypto-js/hmac-sha256';
+import hex from 'crypto-js/enc-hex';
+
+
+
 
 let baseUrl = ''; 
-let anonymousUrl=['/login'];
+let loginUrl='/Account/login';
+
+let Appid='123456';
+let UserKey='sfdsafsdf';
+
 
 if (process.env.NODE_ENV == 'development') {
-	baseUrl = '//elm.cangdu.org';
+	// baseUrl = '//elm.cangdu.org';
+	baseUrl = 'http://localhost:5000/api';
 
 }else if(process.env.NODE_ENV == 'production'){
 	baseUrl = '//elm.cangdu.org';
 }
 
+Vue.use(VueAxios, axios);
 axios.defaults.baseURL= baseUrl;
+//axios.defaults.withCredentials= true;
+
 //axios.defaults.headers.common['Authorization'] = AUTH_TOKEN;
 //axios.defaults.headers.post['Content-Type'] = 'application/x-www-form-urlencoded';
 
@@ -22,18 +35,23 @@ axios.defaults.baseURL= baseUrl;
 axios.interceptors.request.use(function (config) {
     // 在发送请求之前做些什么
     //加上验签
-    
-    //如果用户没有登录 跳转登录页
-    let isAnonymous=false;
-    anonymousUrl.forEach(url => {
-        if(config.url===url){
-            isAnonymous=true;
-            return;
+    config.data.Appid=Appid;
+    config.data.Nonce=new Date().getTime();
+
+    let signStr = Object.keys(config.data).sort().reduce(function(total,currentKey){
+        let val=config.data[currentKey];
+        if(!(val==null||val==undefined||val=='')){
+            total+=currentKey+"="+val+"&";
         }
-    });
-    if(isAnonymous) return config;
-    if(getStore("token"))  return config;
-    router.push("/login");
+        return total;
+    },'');
+    signStr=signStr.substring(0,signStr.length-1);
+    let strs= hmacSHA256(signStr,UserKey);
+    config.data.Sign=hex.stringify(strs);
+
+    //header加上AccessToken    
+    config.headers.AccessToken = getStore('AccessToken');   
+    
     return config;
   }, function (error) {
     // 对请求错误做些什么
@@ -45,7 +63,6 @@ axios.interceptors.response.use(function (response) {
     // 对响应数据做点什么
     //如果返回未登录或登录超时，跳转登录页
     if(response.code==='nologin'){
-        removeStore("token");
         router.push("/login"); 
         return response;
     }
@@ -55,49 +72,13 @@ axios.interceptors.response.use(function (response) {
     return Promise.reject(error);
   });
 
-
-Vue.use(VueAxios, axios)
-
-export const getUser=()=>Vue.axios.get('/v1/user',{
-    params: {
-        user_id:getStore('user_id')
-     }
- }).then(function(response) {  return response.data; });
-
-export const getAddressList = (user_id) => {
-    return Vue.axios.get('/v1/users/'+user_id+'/addresses')
-}
-
+  
 /**
- * 获取首页默认地址
+ * 获取用户信息
  */
-export const cityGuess = () =>{
-   return Vue.axios.get('/v1/cities',{
-       params: {
-            type:'guess'
-        }
-    });
-}
-
-/**
- * 获取首页热门城市
- */
-export const hotcity = () =>{
-    return Vue.axios.get('/v1/cities',{
-        params: {
-             type:'hot'
-         }
-     });
-}
-
-/**
- * 获取首页所有城市
- */
-export const groupcity = () =>{
-    return Vue.axios.get('/v1/cities',{
-        params: {
-             type:'group'
-         }
+export const getUser=()=>{
+    return Vue.axios.post('/Account/getUser',{
+        AccessToken:getStore('AccessToken')
      });
 }
 
@@ -109,40 +90,26 @@ export const getcaptchas = () =>{
     return  Vue.axios.post('/v1/captchas');
 }
 
+
 /**
- * 账号密码登录
+ * 登录
  */
-export const accountLogin = (username, password, captcha_code) =>{
-    return  Vue.axios.post('/v2/login',{
-        params: {
-            username,
-            password,
-            captcha_code
-         }
+export const login = (UserName,Password,Captcha) =>{
+    return  Vue.axios.post(loginUrl,
+        {'UserName':UserName,
+        'Password':Password,
+        'Captcha':Captcha
      });
 }
 
-/**
- * 获取当前所在城市
- */
-export const currentcity = (number) =>{
-    return  Vue.axios.get('/v1/cities/'+ number);       
-}
 
 /**
- * 获取搜索地址
+ * 退出登录
  */
-export const searchplace = (cityid,value) =>{
-    return  Vue.axios.get('/v1/pois',{
-        params: {
-            type: 'search',
-            city_id: cityid,
-            keyword: value
-         }
+export const signout=()=>{
+    return Vue.axios.post('/Account/Logout',{
+        AccessToken:getStore('AccessToken')
      });
 }
 
-export const login = () =>{
-    return  Vue.axios.post('/login',{
-     });
-}
+

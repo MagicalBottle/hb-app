@@ -1,24 +1,19 @@
 import {
 	getUser,
-	getAddressList
+	signout
 } from '../service/getData'
 import {
 	GET_USERINFO,
-	SAVE_ADDRESS
+	OUT_LOGIN
 } from './mutation-types.js'
 export default {
     async getUserInfo({commit}){
         let res=await getUser();
-        commit(GET_USERINFO,res)
+        commit(GET_USERINFO,res.data.Data);
     },
-    async saveAddress({
-		commit,
-		state
-	}) {
-
-		if(state.removeAddress.length > 0) return;
-
-		let addres = await getAddressList(state.userInfo.user_id);
-		commit(SAVE_ADDRESS, addres);	
-	},
+    async usersignout({commit}){
+		let res=await signout();
+		commit(OUT_LOGIN,res.data.Data);
+		return res;
+	}
 }
